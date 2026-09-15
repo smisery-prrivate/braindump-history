@@ -1,0 +1,1887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0d9488">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Brain Relieve</title>
+<style>
+  :root {
+    --bg: #faf7f2;
+    --ink: #1e293b;
+    --muted: #94a3b8;
+    --teal: #0d9488;
+    --teal-dark: #0f766e;
+    --card-light: #fdf6e3;
+    --card-light-border: #f0e0b8;
+    --card-dark: #1e293b;
+    --danger: #b91c1c;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    justify-content: center;
+  }
+  #app {
+    width: 100%;
+    max-width: 480px;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: max(env(safe-area-inset-top), 16px) 16px calc(env(safe-area-inset-bottom) + 16px);
+  }
+  .screen { display: none; flex-direction: column; flex: 1; }
+  .screen.active { display: flex; }
+
+  /* ---------- Main screen ---------- */
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 8px 4px 16px;
+  }
+  header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+  #count { font-size: 13px; color: var(--muted); }
+
+  .inputrow {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 10px 10px 10px 16px;
+    box-shadow: 0 2px 8px rgba(30,41,59,0.05);
+  }
+  .inputrow:focus-within { border-color: var(--teal); }
+  #dumpInput {
+    flex: 1;
+    border: none;
+    outline: none;
+    resize: none;
+    font: inherit;
+    font-size: 17px;
+    line-height: 1.35;
+    max-height: 120px;
+    background: transparent;
+    color: var(--ink);
+  }
+  .iconbtn {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    cursor: pointer;
+    transition: background .15s, transform .1s;
+  }
+  .iconbtn:active { transform: scale(0.92); }
+  #micBtn {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(env(safe-area-inset-bottom) + 122px);
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    border: none;
+    background: var(--teal);
+    color: #fff;
+    font-size: 38px;
+    cursor: pointer;
+    box-shadow: 0 10px 28px rgba(13,148,136,0.45);
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #micBtn:active { transform: translateX(-50%) scale(0.93); }
+  #micBtn.listening {
+    background: var(--danger);
+    box-shadow: 0 10px 28px rgba(185,28,28,0.45);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(185,28,28,0.5), 0 10px 28px rgba(185,28,28,0.45); }
+    50% { box-shadow: 0 0 0 22px rgba(185,28,28,0), 0 10px 28px rgba(185,28,28,0.45); }
+  }
+  #sendBtn { background: #e2e8f0; color: #94a3b8; }
+  #sendBtn.ready { background: var(--teal); color: #fff; }
+
+  #quickRow {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: calc(100% + 118px);
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 8px 10px 11px;
+    box-shadow: 0 10px 28px rgba(30,41,59,0.18);
+  }
+  #quickRow[hidden] { display: none; }
+  #quickTxt {
+    flex: 1;
+    font-size: 13px;
+    color: #475569;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .qbtn {
+    flex: none;
+    width: 46px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fff;
+    padding: 4px 0 2px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.1;
+  }
+  .qbtn span { font-size: 17px; }
+  .qbtn small { font-size: 10px; color: var(--muted); }
+  .qbtn:disabled { opacity: 0.4; }
+  .qbtn:disabled small { color: var(--danger); }
+  #quickTimerWrap {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 3px;
+    height: 3px;
+    border-radius: 2px;
+    background: #f1f5f9;
+    overflow: hidden;
+  }
+  #quickTimerBar { height: 100%; width: 100%; background: var(--teal); }
+  #dumpFlash {
+    text-align: center;
+    font-size: 13px;
+    color: var(--teal-dark);
+    height: 20px;
+    margin-bottom: 4px;
+    opacity: 0;
+    transition: opacity .3s;
+  }
+  #dumpFlash.show { opacity: 1; }
+
+  .fivehead {
+    margin: 26px 4px 10px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  .fivehead h2 { font-size: 15px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.06em; }
+  .fivehead span { font-size: 12px; color: var(--muted); }
+
+  .card {
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    font-size: 16px;
+    line-height: 1.4;
+    word-break: break-word;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card .txt { flex: 1; }
+  .donebtn {
+    flex: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1.5px solid currentColor;
+    background: transparent;
+    color: inherit;
+    opacity: 0.4;
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .donebtn:active { opacity: 1; transform: scale(0.9); }
+  .backuprow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--muted);
+    padding: 8px 2px 0;
+  }
+  .backuprow span { flex: 1; }
+  .vaultwrap { text-align: center; margin-top: 2px; }
+  #vaultToggle { font-size: 13px; }
+  #vaultList {
+    text-align: left;
+    max-height: 220px;
+    overflow-y: auto;
+    border-top: 1px dashed #e2e8f0;
+    padding: 8px 4px 4px;
+    margin-top: 2px;
+  }
+  .vaultrow {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    font-size: 13px;
+    color: #94a3b8;
+    padding: 4px 2px;
+  }
+  .vaultrow .txt { flex: 1; word-break: break-word; }
+  .vaultrow .when { flex: none; font-size: 11px; color: #cbd5e1; white-space: nowrap; }
+  #vaultEmpty { font-size: 12px; color: var(--muted); text-align: center; padding: 8px; }
+  #syncEmail {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 8px;
+    font: inherit;
+    font-size: 13px;
+    background: #fff;
+    outline: none;
+  }
+  #syncEmail:focus { border-color: var(--teal); }
+  .backuprow button {
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    border-radius: 8px;
+    padding: 6px 11px;
+    font-size: 12px;
+    color: #475569;
+    cursor: pointer;
+  }
+  #undoToast {
+    position: fixed;
+    bottom: calc(env(safe-area-inset-bottom) + 116px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: #fff;
+    border-radius: 12px;
+    padding: 11px 16px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    font-size: 14px;
+    box-shadow: 0 8px 24px rgba(30,41,59,0.35);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s;
+    z-index: 10;
+    white-space: nowrap;
+  }
+  #undoToast.show { opacity: 1; pointer-events: auto; }
+  #undoToast button {
+    background: transparent;
+    border: none;
+    color: #5eead4;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0;
+  }
+  .card.dark {
+    background: var(--card-dark);
+    color: #f8fafc;
+    font-weight: 600;
+    box-shadow: 0 6px 16px rgba(30,41,59,0.35);
+  }
+  .card.light {
+    background: var(--card-light);
+    border: 1px solid var(--card-light-border);
+    color: #57534e;
+    box-shadow: 0 1px 3px rgba(30,41,59,0.06);
+  }
+  .card.guest {
+    background: #fffbeb;
+    border: 1.5px dashed #f5c56b;
+    color: #92400e;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card.guest .txt { flex: 1; }
+  .card.guest .left { flex: none; font-size: 11px; color: #b45309; white-space: nowrap; }
+  .guesthead {
+    margin: 18px 4px 10px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  .guesthead h2 { font-size: 13px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.06em; }
+  .guesthead span { font-size: 12px; color: var(--muted); }
+  .compasshead {
+    margin: 2px 4px 8px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  .compasshead h2 { font-size: 13px; font-weight: 700; color: #6366f1; text-transform: uppercase; letter-spacing: 0.06em; }
+  .compasshead span { font-size: 12px; color: var(--muted); }
+  .card.compass {
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    color: #3730a3;
+    font-size: 14px;
+    padding: 10px 14px;
+    font-weight: 600;
+  }
+  .arch.compass { background: #eef2ff; border-color: #c7d2fe; color: #3730a3; }
+  .arch.compass .age { color: #6366f1; }
+  .lifted {
+    transform: scale(1.03);
+    box-shadow: 0 10px 26px rgba(30,41,59,0.25);
+    transition: transform .15s;
+  }
+  .dragclone {
+    position: fixed;
+    z-index: 40;
+    pointer-events: none;
+    opacity: 0.92;
+    box-shadow: 0 14px 34px rgba(30,41,59,0.35);
+    margin: 0;
+  }
+  #dropbar {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    display: none;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    padding: 10px 12px 12px;
+    z-index: 35;
+    background: rgba(250,247,242,0.97);
+    box-shadow: 0 6px 18px rgba(30,41,59,0.12);
+  }
+  #dropbar.show { display: grid; }
+  .dz {
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 10px 4px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    line-height: 1.6;
+  }
+  .dz.hot { border-color: var(--teal); background: #e6f7f4; color: var(--teal-dark); }
+  .drophot {
+    outline: 2px dashed var(--teal);
+    outline-offset: 4px;
+    border-radius: 12px;
+    background: rgba(13,148,136,0.06);
+    min-height: 34px;
+  }
+  #spot {
+    position: fixed;
+    inset: 0;
+    background: rgba(14,23,38,0.82);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 30;
+    padding: 28px;
+  }
+  #spot[hidden] { display: none; }
+  .spotcard {
+    background: #eef2ff;
+    border-radius: 22px;
+    padding: 34px 26px;
+    text-align: center;
+    max-width: 420px;
+    width: 100%;
+  }
+  .spotlabel { font-size: 13px; letter-spacing: 0.12em; font-weight: 700; color: #6366f1; text-transform: uppercase; }
+  .spotsub { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+  #spotText { font-size: 24px; font-weight: 700; color: #312e81; margin-top: 14px; line-height: 1.35; word-break: break-word; }
+  .spothint { font-size: 12px; color: #94a3b8; margin-top: 18px; }
+  #fiveEmpty {
+    color: var(--muted);
+    font-size: 14px;
+    text-align: center;
+    padding: 24px 12px;
+    line-height: 1.5;
+  }
+
+  #openArchiveBtn {
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #475569;
+    font: inherit;
+    font-size: 14px;
+    padding: 11px 17px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .version { font-size: 11px; color: #cbd5e1; }
+  #mainScreen { padding-bottom: 235px; }
+  .dock {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 0;
+    width: 100%;
+    max-width: 480px;
+    background: var(--bg);
+    padding: 6px 16px calc(env(safe-area-inset-bottom) + 12px);
+    z-index: 4;
+  }
+
+  /* ---------- Lock screen ---------- */
+  #lockScreen { align-items: center; justify-content: center; text-align: center; }
+  #lockScreen .lockicon { font-size: 44px; margin-bottom: 16px; }
+  #lockScreen p { color: #475569; margin-bottom: 20px; font-size: 15px; }
+  #pwInput {
+    font-size: 24px;
+    letter-spacing: 0.4em;
+    text-align: center;
+    width: 180px;
+    padding: 10px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    outline: none;
+    background: #fff;
+  }
+  #pwInput.wrong { border-color: var(--danger); animation: shake .4s; }
+  #lockScreen .back { margin-top: 28px; }
+
+  /* ---------- Archive screen ---------- */
+  #archiveScreen header h1 { font-size: 18px; }
+  #archList { flex: 1; overflow-y: auto; padding-bottom: 12px; }
+  .arch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 14px;
+    padding: 13px 15px;
+    margin-bottom: 8px;
+    font-size: 15px;
+    line-height: 1.35;
+    background: #fff;
+    border: 1px solid #eee8dd;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: opacity .4s, background .15s;
+  }
+  .arch .txt { flex: 1; word-break: break-word; }
+  .arch .age { flex: none; font-size: 11px; color: var(--muted); text-align: right; white-space: nowrap; }
+  .arch.light { background: var(--card-light); border-color: var(--card-light-border); }
+  .arch.dark {
+    background: var(--card-dark);
+    border-color: var(--card-dark);
+    color: #f8fafc;
+    font-weight: 600;
+    box-shadow: 0 5px 14px rgba(30,41,59,0.3);
+  }
+  .arch.dark .age { color: #94a3b8; }
+  .arch.guest { background: #fffbeb; border: 1.5px dashed #f5c56b; color: #92400e; }
+  .arch.guest .age { color: #b45309; }
+  .arch.blocked { animation: shake .4s; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20%,60% { transform: translateX(-7px); }
+    40%,80% { transform: translateX(7px); }
+  }
+  #limitMsg {
+    text-align: center;
+    font-size: 13px;
+    color: var(--danger);
+    height: 18px;
+    margin-bottom: 6px;
+    opacity: 0;
+    transition: opacity .3s;
+  }
+  #limitMsg.show { opacity: 1; }
+  #archEmpty { color: var(--muted); text-align: center; padding: 40px 12px; font-size: 14px; }
+
+  .bigbtn {
+    width: 100%;
+    border: none;
+    border-radius: 14px;
+    padding: 15px;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--ink);
+    color: #fff;
+    margin-top: 10px;
+  }
+  .ghost {
+    background: transparent;
+    color: var(--muted);
+    border: none;
+    font: inherit;
+    font-size: 14px;
+    padding: 10px;
+    cursor: pointer;
+  }
+  #modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(30,41,59,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 20;
+  }
+  #modal[hidden] { display: none; }
+  .modalcard {
+    background: #fff;
+    border-radius: 18px;
+    padding: 22px 20px 14px;
+    max-width: 340px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 18px 48px rgba(30,41,59,0.35);
+  }
+  .modalcard h3 { font-size: 17px; margin-bottom: 8px; }
+  .modalcard p { font-size: 14px; color: #475569; line-height: 1.5; }
+  .modalcard .bigbtn { margin-top: 16px; }
+  .modalcard .ghost { width: 100%; margin-top: 2px; }
+  .bigbtn:disabled { opacity: 0.35; cursor: default; }
+  .bigbtn.altbtn { background: #f1f5f9; color: var(--ink); margin-top: 8px; }
+  #modalInput {
+    width: 100%;
+    margin-top: 12px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 15px;
+    resize: none;
+    min-height: 48px;
+    outline: none;
+    background: #fff;
+    color: var(--ink);
+  }
+  #modalInput:focus { border-color: var(--teal); }
+  #modalCompare {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .comparebtn {
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 14px;
+    text-align: left;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .comparebtn.sel { border-color: var(--teal); background: #e6f7f4; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Main: my five on top, thumb dock at the bottom -->
+  <section id="mainScreen" class="screen active">
+    <header>
+      <div>
+        <h1>Brain Relieve</h1>
+        <div class="version">v34</div>
+      </div>
+      <button id="openArchiveBtn">🔒 <span id="count">Archive</span></button>
+    </header>
+
+    <div class="compasshead" id="compassHead" hidden>
+      <h2>🧭 Compass</h2>
+      <span>the path forward</span>
+    </div>
+    <div id="compassList"></div>
+
+    <div class="fivehead">
+      <h2>My Five</h2>
+      <span id="fiveCount"></span>
+    </div>
+    <div id="fiveList"></div>
+    <div id="fiveEmpty" hidden>Nothing prioritized yet.<br>Open the archive to pick up to five things.</div>
+
+    <div class="guesthead" id="guestHead" hidden>
+      <h2>Overflow</h2>
+      <span>expire on their own</span>
+    </div>
+    <div id="guestList"></div>
+
+    <div class="dock">
+      <div id="quickRow" hidden>
+        <div id="quickTxt"></div>
+        <button class="qbtn" id="qCompass"><span>🧭</span><small></small></button>
+        <button class="qbtn" id="qFive"><span>✋</span><small></small></button>
+        <button class="qbtn" id="qOver"><span>⏳</span><small></small></button>
+        <div id="quickTimerWrap"><div id="quickTimerBar"></div></div>
+      </div>
+      <div id="dumpFlash">Into the archive. Gone.</div>
+      <div class="inputrow">
+        <textarea id="dumpInput" rows="1" placeholder="What's on your mind?"></textarea>
+        <button id="sendBtn" class="iconbtn" title="Send">➤</button>
+      </div>
+    </div>
+    <button id="micBtn" title="Speak">🎤</button>
+  </section>
+
+  <div id="undoToast">
+    <span>Done. Gone.</span>
+    <button id="undoBtn">Undo</button>
+  </div>
+
+  <div id="modal" hidden>
+    <div class="modalcard">
+      <h3 id="modalTitle"></h3>
+      <p id="modalText"></p>
+      <textarea id="modalInput" rows="2" hidden></textarea>
+      <div id="modalCompare" hidden></div>
+      <button id="modalOk" class="bigbtn"></button>
+      <button id="modalAlt" class="bigbtn altbtn" hidden></button>
+      <button id="modalAlt2" class="bigbtn altbtn" hidden></button>
+      <button id="modalCancel" class="ghost">Cancel</button>
+    </div>
+  </div>
+
+  <div id="dropbar">
+    <div class="dz" data-zone="compass">🧭<br>Compass</div>
+    <div class="dz" data-zone="five">✋<br>My Five</div>
+    <div class="dz" data-zone="overflow">⏳<br>Overflow</div>
+    <div class="dz" data-zone="archive">🔒<br>Archive</div>
+  </div>
+
+  <div id="spot" hidden>
+    <div class="spotcard">
+      <div class="spotlabel">🎲 Random Reminder</div>
+      <div class="spotsub">one of your three compass things</div>
+      <div id="spotText"></div>
+      <div class="spothint">tap anywhere to dismiss</div>
+    </div>
+  </div>
+
+  <!-- Lock -->
+  <section id="lockScreen" class="screen">
+    <div class="lockicon">🔒</div>
+    <p>The archive costs effort.<br>That's the point.</p>
+    <input id="pwInput" type="password" inputmode="numeric" autocomplete="off" placeholder="••••">
+    <button class="ghost back" id="lockBackBtn">Back</button>
+  </section>
+
+  <!-- Archive -->
+  <section id="archiveScreen" class="screen">
+    <header>
+      <h1>Archive</h1>
+      <span id="archCount"></span>
+    </header>
+    <div id="limitMsg">Five is five. Remove one first.</div>
+    <div id="archList"></div>
+    <div id="archEmpty" hidden>Empty. Go dump.</div>
+    <div class="backuprow" id="syncRow" hidden>
+      <span id="syncHint"></span>
+      <input id="syncEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com">
+      <button id="syncSend">🔄 Enable sync</button>
+      <button id="syncOff" hidden>Sign out</button>
+    </div>
+    <div class="backuprow">
+      <span id="backupHint"></span>
+      <button id="backupBtn">💾 Save backup</button>
+      <button id="restoreBtn">Restore</button>
+      <input id="restoreFile" type="file" accept="application/json,.json" hidden>
+    </div>
+    <div class="vaultwrap">
+      <button class="ghost" id="vaultToggle">🗄 Vault</button>
+      <div id="vaultList" hidden></div>
+    </div>
+    <button class="bigbtn" id="closeBtn">Lock it</button>
+  </section>
+
+</div>
+<script src="config.js"></script>
+<script>
+(() => {
+  'use strict';
+  const DAY = 86400000;
+  const EXPIRE_DAYS = 30;
+  const FADE_START_DAYS = 20;
+  const MAX_MARKS = 5;
+  const GUEST_MS = 30 * 3600000;   // overflow slots expire after 30 hours
+  const MAX_GUESTS = 5;
+  const PASSWORD = '1234';
+  const STORE_KEY = 'braindump.hist.v34';
+
+  // ---------- state ----------
+  // {id, text, created, priority: null|'light'|'dark', guest: null|timestamp, guestUsed: bool}
+  let items = [];
+  const $ = id => document.getElementById(id);
+
+  // Guest status pauses deletion but never resets the clock.
+  // Expiry marks a tombstone (deleted: true) so other devices learn about it;
+  // tombstones themselves are purged after 60 days.
+  function purgeReal() {
+    const now = Date.now();
+    let changed = false;
+    for (const it of items) {
+      // an expired overflow slot drops back into the archive with a FRESH 30-day
+      // clock — falling out of the overflow must not mean instant deletion
+      if (it.guest && (now - it.guest) >= GUEST_MS) {
+        it.guest = null;
+        it.created = now;
+        changed = true;
+      }
+      if (!it.deleted && !it.vault && !it.priority && !it.guest && !it.compass && (now - it.created) >= EXPIRE_DAYS * DAY) {
+        it.vault = true;   // faded thoughts rest in the vault — a quiet list, not a delete
+        changed = true;
+      }
+    }
+    const before = items.length;
+    items = items.filter(it => !(it.deleted && (now - (it.updated_at || it.created)) > 60 * DAY));
+    if (items.length !== before) changed = true;
+    if (changed) save();
+    return changed;
+  }
+  function load() {
+    try { items = JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); }
+    catch (e) { items = []; }
+    for (const it of items) if (!it.updated_at) it.updated_at = it.created;
+    rebuildSnap();
+    purgeReal();
+    save();
+  }
+  // save() stamps updated_at on every item that actually changed (diff vs snapshot) —
+  // one central place instead of touching every mutation site; drives sync LWW.
+  let snap = {};
+  function sigOf(it) {
+    const c = Object.assign({}, it);
+    delete c.updated_at;
+    return JSON.stringify(c);
+  }
+  function rebuildSnap() {
+    snap = {};
+    for (const it of items) snap[it.id] = sigOf(it);
+  }
+  function save() {
+    const now = Date.now();
+    for (const it of items) {
+      const s = sigOf(it);
+      if (snap[it.id] !== s) { it.updated_at = now; snap[it.id] = s; }
+    }
+    saveLocal();
+    scheduleSync();
+  }
+  function saveLocal() {
+    localStorage.setItem(STORE_KEY, JSON.stringify(items));
+    mirror();
+  }
+
+  // ---------- second copy in IndexedDB: auto-restore if localStorage is wiped ----------
+  let idb = null;
+  function mirror() {
+    if (!idb) return;
+    try { idb.transaction('kv', 'readwrite').objectStore('kv').put(JSON.parse(JSON.stringify(items)), 'items'); }
+    catch (e) { /* mirror is best-effort */ }
+  }
+  function openMirror() {
+    if (!window.indexedDB) return;
+    const req = indexedDB.open('brainrelieve-h34', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('kv');
+    req.onsuccess = () => {
+      idb = req.result;
+      if (items.length === 0) {
+        const get = idb.transaction('kv').objectStore('kv').get('items');
+        get.onsuccess = () => {
+          if (Array.isArray(get.result) && get.result.length) {
+            items = get.result;
+            for (const it of items) if (!it.updated_at) it.updated_at = it.created;
+            rebuildSnap();
+            purgeReal();
+            localStorage.setItem(STORE_KEY, JSON.stringify(items));
+            renderMain();
+            flash('Restored from backup copy.');
+          }
+        };
+      } else {
+        mirror();
+      }
+    };
+  }
+  const age = it => Date.now() - it.created;
+  const alive = () => items.filter(it => !it.deleted && !it.vault);
+  const vaulted = () => items.filter(it => !it.deleted && it.vault);
+  const isGuest = it => !it.deleted && !it.vault && !!it.guest && (Date.now() - it.guest) < GUEST_MS;
+  const expired = it => !it.priority && !isGuest(it) && !it.compass && age(it) >= EXPIRE_DAYS * DAY;
+  const compasses = () => items.filter(i => !i.deleted && !i.vault && i.compass);
+  const marks = () => items.filter(it => !it.deleted && !it.vault && it.priority).length;
+  const guests = () => items.filter(isGuest);
+  const guestHoursLeft = it => Math.max(1, Math.ceil((it.guest + GUEST_MS - Date.now()) / 3600000));
+  const guestOpacity = it => Math.max(0.35, 1 - 0.65 * ((Date.now() - it.guest) / GUEST_MS));
+
+  // full strength until day 20, then a visible fade-out ticking down to day 30
+  function fadeOpacity(it) {
+    if (it.priority || it.compass) return 1;
+    const d = age(it) / DAY;
+    if (d < FADE_START_DAYS) return 1;
+    const t = (d - FADE_START_DAYS) / (EXPIRE_DAYS - FADE_START_DAYS);
+    return Math.max(0.12, 1 - 0.88 * t);
+  }
+  function ageLabel(it) {
+    const d = Math.floor(age(it) / DAY);
+    const left = EXPIRE_DAYS - d;
+    if (it.compass) return 'compass';
+    if (it.priority) return d === 0 ? 'today' : `${d} d ago`;
+    if (d >= FADE_START_DAYS) return `expires in ${Math.max(left, 0)} d`;
+    return d === 0 ? 'today' : `${d} d ago`;
+  }
+
+  // ---------- screens ----------
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    $(id).classList.add('active');
+  }
+
+  // ---------- main screen ----------
+  function renderMain() {
+    $('count').textContent = alive().length ? `${alive().length} in archive` : 'Archive';
+
+    const cs = compasses();
+    const clist = $('compassList');
+    clist.innerHTML = '';
+    for (const it of cs) {
+      const el = document.createElement('div');
+      el.className = 'card compass';
+      const txt = document.createElement('div');
+      txt.className = 'txt';
+      txt.textContent = it.text;
+      el.append(txt, doneBtn(it));
+      attachLongPress(el, it);
+      clist.appendChild(el);
+    }
+    $('compassHead').hidden = cs.length === 0;
+    const five = items.filter(it => !it.deleted && !it.vault && it.priority)
+      .sort((a, b) => (a.priority === b.priority) ? b.created - a.created : (a.priority === 'dark' ? -1 : 1));
+    const list = $('fiveList');
+    list.innerHTML = '';
+    for (const it of five) {
+      const el = document.createElement('div');
+      el.className = 'card ' + it.priority;
+      const txt = document.createElement('div');
+      txt.className = 'txt';
+      txt.textContent = it.text;
+      el.append(txt, doneBtn(it));
+      // tap flips the weight (light <-> dark); removal stays behind the archive ritual or the check
+      el.addEventListener('click', () => {
+        it.priority = it.priority === 'dark' ? 'light' : 'dark';
+        save();
+        renderMain();
+      });
+      attachLongPress(el, it);
+      list.appendChild(el);
+    }
+    $('fiveEmpty').hidden = five.length > 0;
+    $('fiveCount').textContent = five.length ? `${five.length} / ${MAX_MARKS}` : '';
+
+    const gs = guests().sort((a, b) => a.guest - b.guest);
+    const glist = $('guestList');
+    glist.innerHTML = '';
+    for (const it of gs) {
+      const el = document.createElement('div');
+      el.className = 'card guest';
+      el.style.opacity = guestOpacity(it);
+      const txt = document.createElement('div');
+      txt.className = 'txt';
+      txt.textContent = it.text;
+      const left = document.createElement('div');
+      left.className = 'left';
+      left.textContent = `${guestHoursLeft(it)} h left`;
+      el.append(txt, left, doneBtn(it));
+      attachLongPress(el, it);
+      glist.appendChild(el);
+    }
+    $('guestHead').hidden = gs.length === 0;
+  }
+
+  const input = $('dumpInput');
+  const sendBtn = $('sendBtn');
+  input.addEventListener('input', () => {
+    sendBtn.classList.toggle('ready', input.value.trim().length > 0);
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+  });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); dump(); }
+  });
+  // fire on pointerdown and keep the textarea focused — a click would first blur the
+  // field, collapse the keyboard and shift the button away from under the finger
+  sendBtn.addEventListener('pointerdown', e => { e.preventDefault(); dump(); });
+  sendBtn.addEventListener('click', e => e.preventDefault());
+
+  let flashTimer;
+  function addThoughts(texts) {
+    const now = Date.now();
+    // reverse so the first line ends up on top
+    texts.slice().reverse().forEach(t => {
+      items.unshift({ id: now + '' + Math.random().toString(36).slice(2, 6), text: t, created: now, priority: null });
+    });
+    save();
+  }
+  function flash(msg) {
+    const f = $('dumpFlash');
+    f.textContent = msg;
+    f.classList.add('show');
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => f.classList.remove('show'), 1800);
+  }
+  function dump() {
+    // one thought per line — pasting a list dumps each line separately
+    const lines = input.value.split('\n').map(t => t.trim()).filter(Boolean);
+    if (!lines.length) return;
+    addThoughts(lines);
+    input.value = '';
+    input.style.height = 'auto';
+    sendBtn.classList.remove('ready');
+    renderMain();
+    flash(lines.length > 1 ? `${lines.length} thoughts archived.` : 'Into the archive. Gone.');
+    // single dump: a short window to grab it straight into a list
+    if (lines.length === 1) showQuick(items[0]); else hideQuick();
+  }
+
+  // ---------- quick-route window: ~6s to send a fresh dump into a list ----------
+  let quickTimer = null, quickItem = null;
+  function updateQuickButtons() {
+    const defs = [
+      ['qCompass', compasses().length, 3],
+      ['qFive', marks(), MAX_MARKS],
+      ['qOver', guests().length, MAX_GUESTS]
+    ];
+    for (const [id, n, max] of defs) {
+      const b = $(id);
+      b.querySelector('small').textContent = `${n}/${max}`;
+      b.disabled = n >= max;
+    }
+  }
+  function showQuick(it) {
+    quickItem = it;
+    $('quickTxt').textContent = it.text;
+    updateQuickButtons();
+    $('quickRow').hidden = false;
+    const bar = $('quickTimerBar');
+    bar.style.transition = 'none';
+    bar.style.width = '100%';
+    requestAnimationFrame(() => {
+      bar.style.transition = 'width 6s linear';
+      bar.style.width = '0%';
+    });
+    clearTimeout(quickTimer);
+    quickTimer = setTimeout(hideQuick, 6000);
+  }
+  function hideQuick() {
+    clearTimeout(quickTimer);
+    quickTimer = null;
+    quickItem = null;
+    $('quickRow').hidden = true;
+  }
+  // same pointerdown pattern as the send button — taps while the keyboard is
+  // collapsing must not miss
+  $('qCompass').addEventListener('pointerdown', e => {
+    e.preventDefault();
+    const it = quickItem; hideQuick(); if (it) tryCompass(it);
+  });
+  $('qFive').addEventListener('pointerdown', e => {
+    e.preventDefault();
+    const it = quickItem; hideQuick();
+    if (!it || marks() >= MAX_MARKS) return;
+    requestMark(it, () => { it.priority = 'light'; save(); rerender(); });
+  });
+  $('qOver').addEventListener('pointerdown', e => {
+    e.preventDefault();
+    const it = quickItem; hideQuick(); if (it) tryGuest(it, null);
+  });
+
+  // ---------- voice ----------
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const micBtn = $('micBtn');
+  if (!SR) {
+    micBtn.style.display = 'none';
+  } else {
+    let rec = null, listening = false, baseText = '';
+    micBtn.addEventListener('click', () => {
+      if (listening) { rec.stop(); return; }
+      rec = new SR();
+      rec.lang = navigator.language || 'en-US';
+      rec.interimResults = true;
+      rec.continuous = false;
+      baseText = input.value ? input.value.trim() + ' ' : '';
+      rec.onstart = () => { listening = true; micBtn.classList.add('listening'); };
+      rec.onresult = e => {
+        let txt = '';
+        for (const r of e.results) txt += r[0].transcript;
+        input.value = baseText + txt;
+        input.dispatchEvent(new Event('input'));
+      };
+      rec.onerror = () => stopUI();
+      rec.onend = () => stopUI();
+      function stopUI() {
+        listening = false;
+        micBtn.classList.remove('listening');
+        input.focus();
+      }
+      try { rec.start(); } catch (e) { /* already running */ }
+    });
+  }
+
+  // ---------- lock ----------
+  // lock/archive get a history entry, so the phone's back button/gesture returns
+  // to the main page instead of leaving the app
+  $('openArchiveBtn').addEventListener('click', () => {
+    $('pwInput').value = '';
+    if (!(history.state && history.state.sub)) history.pushState({ sub: true }, '');
+    show('lockScreen');
+    setTimeout(() => $('pwInput').focus(), 50);
+  });
+  window.addEventListener('popstate', () => {
+    renderMain();
+    show('mainScreen');
+  });
+  $('lockBackBtn').addEventListener('click', () => history.back());
+  $('pwInput').addEventListener('input', e => {
+    const el = e.target;
+    if (el.value === PASSWORD) {
+      el.classList.remove('wrong');
+      renderArchive();
+      show('archiveScreen');
+    } else if (el.value.length >= PASSWORD.length) {
+      el.classList.add('wrong');
+      setTimeout(() => { el.classList.remove('wrong'); el.value = ''; }, 450);
+    }
+  });
+
+  // ---------- archive ----------
+  function renderArchive() {
+    const list = $('archList');
+    list.innerHTML = '';
+    const visible = items.filter(it => !it.deleted && !it.vault && !expired(it));
+    for (const it of visible.slice().sort((a, b) => b.created - a.created)) {
+      const el = document.createElement('div');
+      el.className = 'arch' + (it.compass ? ' compass' : (it.priority ? ' ' + it.priority : (isGuest(it) ? ' guest' : '')));
+      el.style.opacity = isGuest(it) ? guestOpacity(it) : fadeOpacity(it);
+      el.dataset.id = it.id;
+      const txt = document.createElement('div');
+      txt.className = 'txt';
+      txt.textContent = it.text;
+      const ag = document.createElement('div');
+      ag.className = 'age';
+      ag.textContent = isGuest(it) ? `overflow · ${guestHoursLeft(it)} h left` : ageLabel(it);
+      el.append(txt, ag, doneBtn(it));
+      attachTap(el, it);
+      attachLongPress(el, it);
+      list.appendChild(el);
+    }
+    $('archEmpty').hidden = visible.length > 0;
+    const g = guests().length;
+    $('archCount').textContent = `${marks()} / ${MAX_MARKS} picked` + (g ? ` · ${g} overflow` : '');
+    renderBackupHint();
+    renderSyncRow();
+  }
+
+  // single tap: toggle light/off · double tap: essential (dark)
+  // five full: a tap turns the item into a guest instead (temporary, self-expiring)
+  function attachTap(el, it) {
+    let tapTimer = null;
+    el.addEventListener('click', () => {
+      if (tapTimer) {           // double tap
+        clearTimeout(tapTimer);
+        tapTimer = null;
+        doubleTap(it, el);
+      } else {
+        tapTimer = setTimeout(() => {
+          tapTimer = null;      // single tap
+          singleTap(it, el);
+        }, 260);
+      }
+    });
+  }
+
+  // slots 1-3 are free; the 4th asks once, the 5th demands a written why — increasing thought
+  function requestMark(it, apply) {
+    const n = marks() + 1;
+    if (n <= 3) { apply(); return; }
+    if (n === 4) {
+      showModal('Four of five.', 'One slot left after this. Sure it is a real priority?', 'Yes, add it', () => apply());
+    } else {
+      showModal('The last slot.', 'Five is the hard limit. Say why this one earns the final spot.', 'Add it',
+        res => { it.why = res.reason; apply(); },
+        { reason: 'Why this, why now?' });
+    }
+  }
+
+  function singleTap(it, el) {
+    if (it.compass) { block(el, 'A compass thing. Long-press for options.'); return; }
+    if (it.priority) { it.priority = null; commit(); return; }
+    if (isGuest(it)) { it.guest = null; commit(); return; }
+    if (marks() < MAX_MARKS) { requestMark(it, () => { it.priority = 'light'; commit(); }); return; }
+    tryGuest(it, el);
+  }
+
+  function doubleTap(it, el) {
+    if (it.compass) { block(el, 'A compass thing. Long-press for options.'); return; }
+    if (it.priority === 'dark') { it.priority = 'light'; commit(); return; }  // downgrade
+    if (isGuest(it)) {
+      // promote guest into the real five — only if a slot is free
+      if (marks() < MAX_MARKS) requestMark(it, () => { it.guest = null; it.priority = 'dark'; commit(); });
+      else block(el, 'Five is five. Remove one first.');
+      return;
+    }
+    if (it.priority === 'light') { it.priority = 'dark'; commit(); return; }  // upgrade, no new slot
+    if (marks() < MAX_MARKS) { requestMark(it, () => { it.priority = 'dark'; commit(); }); return; }
+    tryGuest(it, el);
+  }
+
+  // a thought gets exactly one guest life — afterwards: into the five, or dump it anew
+  function tryGuest(it, el) {
+    if (it.guestUsed) {
+      showModal('Five is five.',
+        'This thought already had its overflow spot. Now it either joins the five (remove one first) or gets dumped again.',
+        'Got it', null);
+      return;
+    }
+    const g = guests().length;
+    if (g >= MAX_GUESTS) {
+      showModal('All full.',
+        'Knock something off the list before clogging your mental load.',
+        'Got it', null);
+      return;
+    }
+    const add = res => {
+      it.priority = null;
+      it.compass = false;
+      delete it.compassPrev;
+      it.guest = Date.now();
+      it.guestUsed = true;
+      if (res && res.reason) it.why = res.reason;
+      save();
+      rerender();
+      if ($('archiveScreen').classList.contains('active')) renderArchive();
+    };
+    // overflow challenges you: if it can wait, it should wait in the archive
+    if (g < 3) {
+      showModal("Sure it can't wait?",
+        'The overflow is for things that truly must happen in the next 30 hours. It expires on its own.',
+        'Add to overflow', add);
+    } else if (g === 3) {
+      showModal('Are you sure?',
+        "Getting a lot. If it can wait, let it wait in the archive.",
+        'Add to overflow', add,
+        { reason: 'Why does it have to be now?' });
+    } else {
+      showModal('The last spot. Really?',
+        'After this one, nothing fits anymore.',
+        'Add to overflow', add,
+        { reason: "Why can't it wait?" });
+    }
+  }
+
+  // Friction is thinking, not waiting: opts.reason demands a few typed words,
+  // opts.compare demands tapping which existing priority the newcomer beats.
+  function showModal(title, text, okLabel, onOk, opts) {
+    opts = opts || {};
+    $('modalTitle').textContent = title;
+    $('modalText').textContent = text;
+    const ok = $('modalOk'), inp = $('modalInput'), cmp = $('modalCompare'), alt = $('modalAlt');
+    ok.textContent = okLabel;
+    $('modalCancel').hidden = !onOk;
+    // opts.reason: demand a typed why (3+ words) · opts.edit: prefilled text, any non-empty
+    const isEdit = typeof opts.edit === 'string';
+    const needText = !!opts.reason || isEdit;
+    const needPick = Array.isArray(opts.compare) && opts.compare.length > 0;
+    let picked = null;
+    inp.hidden = !needText;
+    inp.value = isEdit ? opts.edit : '';
+    inp.placeholder = opts.reason || '';
+    cmp.hidden = !needPick;
+    cmp.innerHTML = '';
+    const alts = opts.alts || (opts.alt ? [opts.alt] : []);
+    [alt, $('modalAlt2')].forEach((btn, i) => {
+      const a = alts[i];
+      btn.hidden = !a;
+      if (a) {
+        btn.textContent = a.label;
+        btn.onclick = () => { $('modal').hidden = true; a.onClick(); };
+      }
+    });
+    const ready = () => {
+      const words = inp.value.trim().split(/\s+/).filter(Boolean).length;
+      ok.disabled = (needText && words < (isEdit ? 1 : 3)) || (needPick && !picked);
+    };
+    inp.oninput = needText ? ready : null;
+    if (needPick) {
+      for (const c of opts.compare) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'comparebtn';
+        b.textContent = c.text.length > 60 ? c.text.slice(0, 60) + '…' : c.text;
+        b.onclick = () => {
+          picked = c;
+          for (const x of cmp.children) x.classList.remove('sel');
+          b.classList.add('sel');
+          ready();
+        };
+        cmp.appendChild(b);
+      }
+    }
+    ready();
+    $('modal').hidden = false;
+    if (needText) setTimeout(() => inp.focus(), 60);
+    ok.onclick = () => {
+      if (ok.disabled) return;
+      $('modal').hidden = true;
+      if (onOk) onOk({ reason: inp.value.trim() || null, picked });
+    };
+    $('modalCancel').onclick = () => { $('modal').hidden = true; };
+  }
+
+  function commit() { save(); renderArchive(); }
+
+  // ---------- compass: max three standing things that define the path ----------
+  function tryCompass(it) {
+    if (compasses().length >= 3) {
+      showModal('Three is the path.',
+        'Three standing things define where you are heading. Remove one from the compass first.',
+        'Got it', null);
+      return;
+    }
+    // remember where it came from, so leaving the compass restores it
+    it.compassPrev = it.priority ? { priority: it.priority } : (isGuest(it) ? { guest: it.guest } : null);
+    it.compass = true;
+    it.priority = null;
+    it.guest = null;
+    save();
+    rerender();
+    flash('On your compass.');
+  }
+
+  // leaving the compass: go back to where it came from, if that place still has room
+  function uncompass(it) {
+    it.compass = false;
+    const prev = it.compassPrev;
+    delete it.compassPrev;
+    if (prev && prev.priority && marks() < MAX_MARKS) {
+      it.priority = prev.priority;
+      flash('Back in your five.');
+    } else if (prev && prev.guest && (Date.now() - prev.guest) < GUEST_MS && guests().length < MAX_GUESTS) {
+      it.guest = prev.guest;
+      flash('Back in the overflow.');
+    } else {
+      flash('Back in the archive.');
+    }
+    save();
+    rerender();
+  }
+
+  // irregular reminder: on open, at most every 6h, roughly every other time,
+  // spotlight one random compass thing
+  const SPOT_KEY = 'braindump.hist.v34.lastSpot';
+  function maybeSpotlight() {
+    const cs = compasses();
+    if (!cs.length) return;
+    const last = +localStorage.getItem(SPOT_KEY) || 0;
+    if (Date.now() - last < 6 * 3600000 || Math.random() > 0.6) return;
+    const it = cs[Math.floor(Math.random() * cs.length)];
+    $('spotText').textContent = it.text;
+    $('spot').hidden = false;
+    localStorage.setItem(SPOT_KEY, Date.now() + '');
+    setTimeout(() => { $('spot').hidden = true; }, 6000);
+  }
+  $('spot').addEventListener('click', () => { $('spot').hidden = true; });
+
+  // ---------- backup to file + restore ----------
+  const BACKUP_KEY = 'braindump.lastBackup';
+  function renderBackupHint() {
+    const t = +localStorage.getItem(BACKUP_KEY) || 0;
+    $('backupHint').textContent = t
+      ? 'Last backup: ' + (Math.floor((Date.now() - t) / DAY) === 0 ? 'today' : Math.floor((Date.now() - t) / DAY) + ' d ago')
+      : 'No backup yet.';
+  }
+  $('backupBtn').addEventListener('click', () => {
+    const blob = new Blob(
+      [JSON.stringify({ app: 'Brain Relieve', exported: new Date().toISOString(), items }, null, 2)],
+      { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'brain-relieve-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    localStorage.setItem(BACKUP_KEY, Date.now() + '');
+    renderBackupHint();
+  });
+  $('restoreBtn').addEventListener('click', () => $('restoreFile').click());
+  $('restoreFile').addEventListener('change', e => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    file.text().then(t => {
+      const data = JSON.parse(t);
+      const arr = Array.isArray(data) ? data : data.items;
+      if (!Array.isArray(arr)) throw new Error('kein Array');
+      const known = new Set(items.map(i => i.id));
+      let n = 0;
+      for (const it of arr) {
+        if (it && it.id && typeof it.text === 'string' && !known.has(it.id)) {
+          items.push({ id: it.id, text: it.text, created: +it.created || Date.now(),
+            updated_at: +it.updated_at || +it.created || Date.now(),
+            priority: it.priority === 'dark' || it.priority === 'light' ? it.priority : null,
+            guest: +it.guest || null, guestUsed: !!it.guestUsed, compass: !!it.compass,
+            deleted: !!it.deleted, vault: !!it.vault,
+            why: typeof it.why === 'string' ? it.why : undefined });
+          n++;
+        }
+      }
+      purgeReal();
+      save();
+      renderMain();
+      renderArchive();
+      $('backupHint').textContent = n + ' thoughts restored.';
+    }).catch(() => { $('backupHint').textContent = "Can't read that file."; });
+  });
+
+  // ---------- letting go: delete anywhere, no friction, 5s undo ----------
+  let lastDeleted = null, undoTimer;
+  function doneBtn(it) {
+    const b = document.createElement('button');
+    b.className = 'donebtn';
+    b.title = 'Done – delete';
+    b.textContent = '✓';
+    b.addEventListener('click', e => {
+      e.stopPropagation();
+      deleteItem(it);
+    });
+    return b;
+  }
+  // deletes are tombstones so they propagate to other devices; undo just unmarks
+  function deleteItem(it) {
+    it.deleted = true;
+    lastDeleted = it;
+    save();
+    rerender();
+    const t = $('undoToast');
+    t.classList.add('show');
+    clearTimeout(undoTimer);
+    undoTimer = setTimeout(() => { t.classList.remove('show'); lastDeleted = null; }, 5000);
+  }
+  $('undoBtn').addEventListener('click', () => {
+    if (lastDeleted) {
+      lastDeleted.deleted = false;
+      save();
+      lastDeleted = null;
+      rerender();
+    }
+    $('undoToast').classList.remove('show');
+    clearTimeout(undoTimer);
+  });
+  function rerender() {
+    renderMain();
+    if ($('archiveScreen').classList.contains('active')) renderArchive();
+  }
+
+  // ---------- hold a card: lift it — release = options menu, drag = move between categories ----------
+  function openEdit(it) {
+    showModal('Edit thought.', '', 'Save',
+      res => { if (res.reason) { it.text = res.reason; save(); rerender(); } },
+      { edit: it.text });
+  }
+  function uncompassDest(it) {
+    const prev = it.compassPrev;
+    if (prev && prev.priority && marks() < MAX_MARKS) return 'Back to my five';
+    if (prev && prev.guest && (Date.now() - prev.guest) < GUEST_MS && guests().length < MAX_GUESTS) return 'Back to overflow';
+    return 'Back to archive';
+  }
+  function openOptions(it) {
+    const snippet = it.text.length > 40 ? it.text.slice(0, 40) + '…' : it.text;
+    const alts = [];
+    if (it.compass) {
+      alts.push({ label: uncompassDest(it), onClick: () => uncompass(it) });
+    } else if (it.priority || isGuest(it)) {
+      alts.push({ label: 'Back to archive', onClick: () => {
+        // a deliberate return resets the one-overflow-life rule (only expiry keeps it spent)
+        if (isGuest(it)) it.guestUsed = false;
+        it.priority = null; it.guest = null; save(); rerender(); flash('Back in the archive.');
+      } });
+    } else {
+      alts.push({ label: '🧭 Make it a compass', onClick: () => tryCompass(it) });
+    }
+    showModal(snippet,
+      it.why ? `Your why: "${it.why}"` : '',
+      '✏️ Edit',
+      () => openEdit(it),
+      { alts });
+  }
+  // drop a dragged card onto a category — dragging is deliberate, so no why-dialogs here,
+  // only hard limits speak up
+  function moveTo(it, zone) {
+    if (zone === 'archive') {
+      if (!it.priority && !isGuest(it) && !it.compass) return;
+      if (isGuest(it)) it.guestUsed = false;  // deliberate return resets the overflow life
+      it.priority = null; it.guest = null; it.compass = false; delete it.compassPrev;
+      save(); rerender(); flash('Back in the archive.');
+    } else if (zone === 'compass') {
+      if (it.compass) return;
+      tryCompass(it);
+    } else if (zone === 'five') {
+      if (it.priority) return;
+      if (marks() >= MAX_MARKS) {
+        showModal('Five is five.', 'Remove one first — or drop it on Overflow.', 'Got it', null);
+        return;
+      }
+      it.guest = null; it.compass = false; delete it.compassPrev;
+      it.priority = 'light';
+      save(); rerender();
+    } else if (zone === 'overflow') {
+      if (isGuest(it)) return;
+      if (it.guestUsed) {
+        showModal('One overflow life.', 'This thought already had its overflow spot. Into the five — or dump it again.', 'Got it', null);
+        return;
+      }
+      if (guests().length >= MAX_GUESTS) {
+        showModal('All full.', 'Knock something off the list before clogging your mental load.', 'Got it', null);
+        return;
+      }
+      it.priority = null; it.compass = false; delete it.compassPrev;
+      it.guest = Date.now();
+      it.guestUsed = true;
+      save(); rerender();
+    }
+    if ($('archiveScreen').classList.contains('active')) renderArchive();
+  }
+  // hold 450ms: card lifts, drag & drop is live · keep holding still until 1.4s: options dialog
+  const HOLD_MS = 450;
+  const MENU_MS = 1400;
+  let swallowNextClick = false;
+  // where is the pointer? bar cells count, and so do the visible sections themselves
+  function zoneAt(x, y) {
+    const t = document.elementFromPoint(x, y);
+    if (!t || !t.closest) return null;
+    const dz = t.closest('.dz');
+    if (dz) return dz.dataset.zone;
+    if (t.closest('#compassList, .compasshead')) return 'compass';
+    if (t.closest('#fiveList, .fivehead, #fiveEmpty')) return 'five';
+    if (t.closest('#guestList, .guesthead')) return 'overflow';
+    if (t.closest('#openArchiveBtn')) return 'archive';
+    return null;
+  }
+  const SECTION_ELS = { compass: 'compassList', five: 'fiveList', overflow: 'guestList' };
+  function highlightZone(zone) {
+    $('dropbar').querySelectorAll('.dz').forEach(d => d.classList.toggle('hot', d.dataset.zone === zone));
+    for (const [z, id] of Object.entries(SECTION_ELS)) {
+      $(id).classList.toggle('drophot', z === zone);
+    }
+  }
+  function attachLongPress(el, it) {
+    let timer = null, menuTimer = null, armed = false, dragging = false, sx = 0, sy = 0, clone = null, offX = 0, offY = 0;
+    let lastX = 0, lastY = 0, scrolling = false;
+    const bar = $('dropbar');
+    // dragging near the edges scrolls, so far-away sections are reachable
+    function autoScroll() {
+      if (!dragging) { scrolling = false; return; }
+      const h = window.innerHeight;
+      const barB = bar.getBoundingClientRect().bottom;
+      let dy = 0;
+      if (lastY > h - 110) dy = Math.min(16, (lastY - (h - 110)) / 4 + 5);
+      else if (lastY > barB + 4 && lastY < barB + 80) dy = -Math.min(16, ((barB + 80) - lastY) / 4 + 5);
+      if (dy) {
+        const inArchive = $('archiveScreen').classList.contains('active');
+        if (inArchive) $('archList').scrollTop += dy;
+        else window.scrollBy(0, dy);
+        highlightZone(zoneAt(lastX, lastY));
+      }
+      requestAnimationFrame(autoScroll);
+    }
+    const reset = () => {
+      if (timer) { clearTimeout(timer); timer = null; }
+      if (menuTimer) { clearTimeout(menuTimer); menuTimer = null; }
+      armed = false;
+      el.classList.remove('lifted');
+      dragging = false;
+      if (clone) { clone.remove(); clone = null; }
+      el.style.opacity = '';
+      bar.classList.remove('show');
+      highlightZone(null);
+    };
+    el.addEventListener('pointerdown', e => {
+      // presses that start on the check button belong to the button — capturing the
+      // pointer here would re-target the mouse click onto the card (prioritize!)
+      if (e.target && e.target.closest && e.target.closest('.donebtn')) return;
+      sx = e.clientX; sy = e.clientY;
+      try { el.setPointerCapture(e.pointerId); } catch (err) { /* synthetic events */ }
+      timer = setTimeout(() => {
+        timer = null;
+        armed = true;
+        el._lpFired = true;
+        swallowNextClick = true;   // the release tap must not hit anything by accident
+        el.classList.add('lifted');
+        bar.classList.add('show'); // drop targets appear right away — drag is live now
+        menuTimer = setTimeout(() => {
+          menuTimer = null;
+          if (!dragging) {
+            bar.classList.remove('show');
+            openOptions(it);
+          }
+        }, MENU_MS - HOLD_MS);
+      }, HOLD_MS);
+    });
+    // while lifted, the browser must not turn finger movement into scrolling
+    el.addEventListener('touchmove', e => { if (armed) e.preventDefault(); }, { passive: false });
+    el.addEventListener('pointermove', e => {
+      const dist = Math.hypot(e.clientX - sx, e.clientY - sy);
+      if (!armed) {
+        // mouse users drag instantly — no hold needed (no scroll conflict on desktop)
+        if (e.pointerType === 'mouse' && e.buttons === 1 && timer && dist > 8) {
+          clearTimeout(timer); timer = null;
+          armed = true;
+          el._lpFired = true;
+          swallowNextClick = true;
+          el.classList.add('lifted');
+          bar.classList.add('show');
+        } else {
+          if (timer && dist > 10) { clearTimeout(timer); timer = null; }
+          return;
+        }
+      }
+      if (!dragging && dist > 14) {
+        if (menuTimer) { clearTimeout(menuTimer); menuTimer = null; }
+        $('modal').hidden = true;
+        dragging = true;
+        const r = el.getBoundingClientRect();
+        clone = el.cloneNode(true);
+        clone.classList.add('dragclone');
+        clone.classList.remove('lifted');
+        clone.style.width = r.width + 'px';
+        offX = e.clientX - r.left;
+        offY = e.clientY - r.top;
+        document.body.appendChild(clone);
+        el.style.opacity = '0.35';
+        bar.classList.add('show');
+        if (!scrolling) { scrolling = true; requestAnimationFrame(autoScroll); }
+      }
+      if (dragging) {
+        lastX = e.clientX;
+        lastY = e.clientY;
+        clone.style.left = (e.clientX - offX) + 'px';
+        clone.style.top = (e.clientY - offY) + 'px';
+        highlightZone(zoneAt(e.clientX, e.clientY));
+      }
+    });
+    el.addEventListener('pointerup', e => {
+      const wasDragging = dragging;
+      const zone = wasDragging ? zoneAt(e.clientX, e.clientY) : null;
+      reset();
+      if (wasDragging && zone) moveTo(it, zone);
+      // menu already opened on hold — releasing just leaves it on screen
+    });
+    el.addEventListener('pointercancel', reset);
+    el.addEventListener('contextmenu', e => e.preventDefault());
+  }
+  // after a long-press, the released tap must not flip the card's priority —
+  // document-level capture runs before any card listener, guaranteed
+  document.addEventListener('pointerdown', () => { swallowNextClick = false; }, true);
+  document.addEventListener('click', e => {
+    if (swallowNextClick) {
+      swallowNextClick = false;
+      e.stopPropagation();
+      e.preventDefault();
+      return;
+    }
+    const card = e.target.closest ? e.target.closest('.card, .arch') : null;
+    if (card && card._lpFired) {
+      card._lpFired = false;
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }, true);
+
+  let limitTimer;
+  function block(el, msg) {
+    el.classList.add('blocked');
+    setTimeout(() => el.classList.remove('blocked'), 450);
+    const m = $('limitMsg');
+    m.textContent = msg;
+    m.classList.add('show');
+    clearTimeout(limitTimer);
+    limitTimer = setTimeout(() => m.classList.remove('show'), 2000);
+  }
+
+  $('closeBtn').addEventListener('click', () => history.back());
+
+  // ---------- vault: faded thoughts rest here — just a list, no actions ----------
+  function renderVault() {
+    const list = $('vaultList');
+    list.innerHTML = '';
+    const vs = vaulted().sort((a, b) => (b.updated_at || b.created) - (a.updated_at || a.created));
+    if (!vs.length) {
+      const e = document.createElement('div');
+      e.id = 'vaultEmpty';
+      e.textContent = 'Nothing has faded yet.';
+      list.appendChild(e);
+      return;
+    }
+    for (const it of vs) {
+      const row = document.createElement('div');
+      row.className = 'vaultrow';
+      const txt = document.createElement('div');
+      txt.className = 'txt';
+      txt.textContent = it.text;
+      const when = document.createElement('div');
+      when.className = 'when';
+      when.textContent = 'faded ' + new Date(it.updated_at || it.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      row.append(txt, when);
+      list.appendChild(row);
+    }
+  }
+  $('vaultToggle').addEventListener('click', () => {
+    const l = $('vaultList');
+    if (l.hidden) { renderVault(); l.hidden = false; $('vaultToggle').textContent = `🗄 Vault (${vaulted().length}) — hide`; }
+    else { l.hidden = true; $('vaultToggle').textContent = '🗄 Vault'; }
+  });
+
+  // real countdown: re-check the clock every minute and whenever the app comes back
+  // to the foreground, so long-open sessions still fade and purge for real
+  function tick() {
+    const changed = purgeReal();
+    renderMain();
+    if (changed && $('archiveScreen').classList.contains('active')) renderArchive();
+  }
+  setInterval(tick, 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { tick(); syncNow(); } });
+
+  // ---------- sync (v2): local-first, optional account via Supabase ----------
+  const SYNC = window.BR_SYNC || null;
+  const SESSION_KEY = 'braindump.hist.v34.session';
+  let session = null;
+  try { session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) { session = null; }
+
+  function jwtPayload(token) {
+    return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+  }
+  function adoptSession(d) {
+    const p = jwtPayload(d.access_token);
+    session = {
+      access_token: d.access_token,
+      refresh_token: d.refresh_token,
+      expires_at: p.exp,
+      email: p.email,
+      uid: p.sub
+    };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  }
+  function dropSession() {
+    session = null;
+    localStorage.removeItem(SESSION_KEY);
+  }
+  async function ensureSession() {
+    if (!SYNC || !session) return false;
+    if (Date.now() / 1000 < session.expires_at - 60) return true;
+    try {
+      const r = await fetch(SYNC.url + '/auth/v1/token?grant_type=refresh_token', {
+        method: 'POST',
+        headers: { apikey: SYNC.key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: session.refresh_token })
+      });
+      if (!r.ok) { if (r.status === 400 || r.status === 401) dropSession(); return false; }
+      adoptSession(await r.json());
+      return true;
+    } catch (e) { return false; }  // offline — try again later
+  }
+  const restHeaders = () => ({
+    apikey: SYNC.key,
+    Authorization: 'Bearer ' + session.access_token,
+    'Content-Type': 'application/json'
+  });
+  const toRow = it => ({
+    id: it.id,
+    text: it.text,
+    created: it.created,
+    updated_at: it.updated_at || it.created,
+    priority: it.priority || null,
+    guest: it.guest || null,
+    guest_used: !!it.guestUsed,
+    compass: !!it.compass,
+    compass_prev: it.compassPrev || null,
+    why: it.why || null,
+    deleted: !!it.deleted,
+    vault: !!it.vault
+  });
+  const fromRow = r => ({
+    id: r.id,
+    text: r.text,
+    created: +r.created,
+    updated_at: +r.updated_at,
+    priority: r.priority || null,
+    guest: r.guest ? +r.guest : null,
+    guestUsed: !!r.guest_used,
+    compass: !!r.compass,
+    compassPrev: r.compass_prev || undefined,
+    why: r.why || undefined,
+    deleted: !!r.deleted,
+    vault: !!r.vault
+  });
+
+  let syncTimer = null, syncing = false;
+  function scheduleSync() {
+    if (!SYNC || !session) return;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(syncNow, 1500);
+  }
+  async function syncNow() {
+    if (!SYNC || !session) return;
+    if (syncing) { scheduleSync(); return; }
+    syncing = true;
+    try {
+      if (!(await ensureSession())) { renderSyncRow(); return; }
+      // lastSync2: cursor key renamed once in v33 to force a one-time full re-pull
+      // (v30-v32 could strand old-stamped rows below every device's cursor)
+      const lsKey = 'braindump.hist.v34.lastSync2.' + session.uid;
+      const last = +localStorage.getItem(lsKey) || 0;
+      // pull newer rows, merge per item: newest updated_at wins
+      const res = await fetch(`${SYNC.url}/rest/v1/thoughts?select=*&updated_at=gt.${last}&order=updated_at.asc`,
+        { headers: restHeaders() });
+      if (!res.ok) return;
+      const rows = await res.json();
+      let maxSeen = last, changedLocal = false;
+      for (const r of rows) {
+        maxSeen = Math.max(maxSeen, +r.updated_at);
+        const inc = fromRow(r);
+        const idx = items.findIndex(i => i.id === inc.id);
+        if (idx < 0) {
+          items.push(inc);
+          snap[inc.id] = sigOf(inc);
+          changedLocal = true;
+        } else if (inc.updated_at > (items[idx].updated_at || items[idx].created)) {
+          items[idx] = inc;
+          snap[inc.id] = sigOf(inc);
+          changedLocal = true;
+        }
+      }
+      // push everything that changed locally since the last sync
+      const dirty = items.filter(i => (i.updated_at || 0) > last).map(toRow);
+      if (dirty.length) {
+        const r2 = await fetch(`${SYNC.url}/rest/v1/thoughts?on_conflict=user_id%2Cid`, {
+          method: 'POST',
+          headers: Object.assign(restHeaders(), { Prefer: 'resolution=merge-duplicates' }),
+          body: JSON.stringify(dirty)
+        });
+        if (!r2.ok) return;
+        for (const d of dirty) maxSeen = Math.max(maxSeen, d.updated_at);
+      }
+      localStorage.setItem(lsKey, maxSeen + '');
+      if (changedLocal) {
+        saveLocal();
+        rerender();
+      }
+      renderSyncRow();
+    } catch (e) {
+      /* offline or transient — next save/focus retries */
+    } finally {
+      syncing = false;
+    }
+  }
+  async function sendMagicLink(email) {
+    const redirect = encodeURIComponent(location.origin + location.pathname);
+    const r = await fetch(`${SYNC.url}/auth/v1/otp?redirect_to=${redirect}`, {
+      method: 'POST',
+      headers: { apikey: SYNC.key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, create_user: true })
+    });
+    return r.ok;
+  }
+  function renderSyncRow() {
+    if (!SYNC) { $('syncRow').hidden = true; return; }
+    $('syncRow').hidden = false;
+    const signedIn = !!session;
+    $('syncEmail').hidden = signedIn;
+    $('syncSend').hidden = signedIn;
+    $('syncOff').hidden = !signedIn;
+    $('syncHint').textContent = signedIn ? 'Sync on · ' + (session.email || '') : 'Sync across devices:';
+  }
+  $('syncSend').addEventListener('click', async () => {
+    const email = $('syncEmail').value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { $('syncHint').textContent = 'Enter a valid email.'; return; }
+    $('syncHint').textContent = 'Sending…';
+    const ok = await sendMagicLink(email);
+    $('syncHint').textContent = ok ? 'Magic link sent — check your email.' : 'Could not send. Try again later.';
+  });
+  $('syncOff').addEventListener('click', () => {
+    dropSession();
+    renderSyncRow();
+  });
+
+  // ---------- boot ----------
+  load();
+  if (history.state && history.state.sub) history.replaceState(null, '');
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
+  openMirror();
+  // magic-link return: session tokens arrive in the URL hash, never on the server
+  if (location.hash.includes('access_token=')) {
+    try {
+      const q = new URLSearchParams(location.hash.slice(1));
+      if (q.get('access_token') && q.get('refresh_token')) {
+        adoptSession({ access_token: q.get('access_token'), refresh_token: q.get('refresh_token') });
+        // adopt the local stock: stamp everything "now" so migrated thoughts with old
+        // created-dates are visible to every other device's sync window
+        const now = Date.now();
+        for (const it of items) { it.updated_at = now; snap[it.id] = sigOf(it); }
+        saveLocal();
+        setTimeout(() => flash('Sync enabled.'), 300);
+      }
+    } catch (e) { /* malformed hash — ignore */ }
+    history.replaceState(null, '', location.pathname);
+  }
+  // #import=<urlencoded JSON array> — hash never reaches the server, thoughts stay private
+  if (location.hash.startsWith('#import=')) {
+    try {
+      const arr = JSON.parse(decodeURIComponent(location.hash.slice(8)));
+      if (Array.isArray(arr)) {
+        const texts = arr.filter(t => typeof t === 'string' && t.trim()).map(t => t.trim());
+        if (texts.length) {
+          addThoughts(texts);
+          setTimeout(() => flash(`${texts.length} thoughts imported.`), 300);
+        }
+      }
+    } catch (e) { /* malformed import — ignore */ }
+    history.replaceState(null, '', location.pathname);
+  }
+  renderMain();
+  maybeSpotlight();
+  syncNow();
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    navigator.serviceWorker.register('sw.js');
+  }
+})();
+</script>
+</body>
+</html>
