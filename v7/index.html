@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Braindump</title>
+<title>Brain Relieve</title>
 <style>
   :root {
     --bg: #faf7f2;
@@ -360,58 +360,58 @@
   <section id="mainScreen" class="screen active">
     <header>
       <div>
-        <h1>Braindump</h1>
+        <h1>Brain Relieve</h1>
         <div class="version">v7</div>
       </div>
-      <button id="openArchiveBtn">🔒 <span id="count">Archiv</span></button>
+      <button id="openArchiveBtn">🔒 <span id="count">Archive</span></button>
     </header>
 
     <div class="fivehead">
-      <h2>Meine Fünf</h2>
+      <h2>My Five</h2>
       <span id="fiveCount"></span>
     </div>
     <div id="fiveList"></div>
-    <div id="fiveEmpty" hidden>Noch nichts priorisiert.<br>Öffne das Archiv, um bis zu fünf Dinge zu wählen.</div>
+    <div id="fiveEmpty" hidden>Nothing prioritized yet.<br>Open the archive to pick up to five things.</div>
 
     <div class="guesthead" id="guestHead" hidden>
-      <h2>Gäste</h2>
-      <span>verfallen von selbst</span>
+      <h2>Guests</h2>
+      <span>expire on their own</span>
     </div>
     <div id="guestList"></div>
 
     <div class="dock">
-      <div id="dumpFlash">Im Archiv. Weg damit.</div>
+      <div id="dumpFlash">Into the archive. Gone.</div>
       <div class="inputrow">
-        <textarea id="dumpInput" rows="1" placeholder="Was ist im Kopf?"></textarea>
-        <button id="sendBtn" class="iconbtn" title="Senden">➤</button>
+        <textarea id="dumpInput" rows="1" placeholder="What's on your mind?"></textarea>
+        <button id="sendBtn" class="iconbtn" title="Send">➤</button>
       </div>
     </div>
-    <button id="micBtn" title="Sprechen">🎤</button>
+    <button id="micBtn" title="Speak">🎤</button>
   </section>
 
   <div id="undoToast">
-    <span>Weg. Erledigt.</span>
-    <button id="undoBtn">Rückgängig</button>
+    <span>Done. Gone.</span>
+    <button id="undoBtn">Undo</button>
   </div>
 
   <!-- Lock -->
   <section id="lockScreen" class="screen">
     <div class="lockicon">🔒</div>
-    <p>Das Archiv kostet Aufwand.<br>Das ist Absicht.</p>
+    <p>The archive costs effort.<br>That's the point.</p>
     <input id="pwInput" type="password" inputmode="numeric" autocomplete="off" placeholder="••••">
-    <button class="ghost back" id="lockBackBtn">Zurück</button>
+    <button class="ghost back" id="lockBackBtn">Back</button>
   </section>
 
   <!-- Archive -->
   <section id="archiveScreen" class="screen">
     <header>
-      <h1>Archiv</h1>
+      <h1>Archive</h1>
       <span id="archCount"></span>
     </header>
-    <div id="limitMsg">Fünf sind fünf. Erst eins wegnehmen.</div>
+    <div id="limitMsg">Five is five. Remove one first.</div>
     <div id="archList"></div>
-    <div id="archEmpty" hidden>Leer. Geh dumpen.</div>
-    <button class="bigbtn" id="closeBtn">Schloss zu</button>
+    <div id="archEmpty" hidden>Empty. Go dump.</div>
+    <button class="bigbtn" id="closeBtn">Lock it</button>
   </section>
 
 </div>
@@ -471,9 +471,9 @@
   function ageLabel(it) {
     const d = Math.floor(age(it) / DAY);
     const left = EXPIRE_DAYS - d;
-    if (it.priority) return d === 0 ? 'heute' : `vor ${d} T`;
-    if (d >= FADE_START_DAYS) return `läuft in ${Math.max(left, 0)} T ab`;
-    return d === 0 ? 'heute' : `vor ${d} T`;
+    if (it.priority) return d === 0 ? 'today' : `${d} d ago`;
+    if (d >= FADE_START_DAYS) return `expires in ${Math.max(left, 0)} d`;
+    return d === 0 ? 'today' : `${d} d ago`;
   }
 
   // ---------- screens ----------
@@ -484,7 +484,7 @@
 
   // ---------- main screen ----------
   function renderMain() {
-    $('count').textContent = items.length ? `${items.length} im Archiv` : 'Archiv';
+    $('count').textContent = items.length ? `${items.length} in archive` : 'Archive';
     const five = items.filter(it => it.priority)
       .sort((a, b) => (a.priority === b.priority) ? b.created - a.created : (a.priority === 'dark' ? -1 : 1));
     const list = $('fiveList');
@@ -519,7 +519,7 @@
       txt.textContent = it.text;
       const left = document.createElement('div');
       left.className = 'left';
-      left.textContent = `noch ${guestDaysLeft(it)} T`;
+      left.textContent = `${guestDaysLeft(it)} d left`;
       el.append(txt, left, doneBtn(it));
       glist.appendChild(el);
     }
@@ -563,7 +563,7 @@
     input.style.height = 'auto';
     sendBtn.classList.remove('ready');
     renderMain();
-    flash(lines.length > 1 ? `${lines.length} Gedanken im Archiv.` : 'Im Archiv. Weg damit.');
+    flash(lines.length > 1 ? `${lines.length} thoughts archived.` : 'Into the archive. Gone.');
   }
 
   // ---------- voice ----------
@@ -576,7 +576,7 @@
     micBtn.addEventListener('click', () => {
       if (listening) { rec.stop(); return; }
       rec = new SR();
-      rec.lang = 'de-DE';
+      rec.lang = navigator.language || 'en-US';
       rec.interimResults = true;
       rec.continuous = false;
       baseText = input.value ? input.value.trim() + ' ' : '';
@@ -632,14 +632,14 @@
       txt.textContent = it.text;
       const ag = document.createElement('div');
       ag.className = 'age';
-      ag.textContent = isGuest(it) ? `Gast · noch ${guestDaysLeft(it)} T` : ageLabel(it);
+      ag.textContent = isGuest(it) ? `guest · ${guestDaysLeft(it)} d left` : ageLabel(it);
       el.append(txt, ag, doneBtn(it));
       attachTap(el, it);
       list.appendChild(el);
     }
     $('archEmpty').hidden = visible.length > 0;
     const g = guests().length;
-    $('archCount').textContent = `${marks()} / ${MAX_MARKS} gewählt` + (g ? ` · ${g} Gäste` : '');
+    $('archCount').textContent = `${marks()} / ${MAX_MARKS} picked` + (g ? ` · ${g} guests` : '');
   }
 
   // single tap: toggle light/off · double tap: essential (dark)
@@ -672,7 +672,7 @@
     if (isGuest(it)) {
       // promote guest into the real five — only if a slot is free
       if (marks() < MAX_MARKS) { it.guest = null; it.priority = 'dark'; commit(); }
-      else block(el, 'Fünf sind fünf. Erst eins wegnehmen.');
+      else block(el, 'Five is five. Remove one first.');
       return;
     }
     if (it.priority === 'light' || marks() < MAX_MARKS) { it.priority = 'dark'; commit(); return; }
@@ -681,8 +681,8 @@
 
   // a thought gets exactly one guest life — afterwards: into the five, or dump it anew
   function tryGuest(it, el) {
-    if (it.guestUsed) { block(el, 'War schon Gast. In die Fünf – oder neu dumpen.'); return; }
-    if (guests().length >= MAX_GUESTS) { block(el, `Mehr als ${MAX_GUESTS} Gäste gibt es nicht.`); return; }
+    if (it.guestUsed) { block(el, 'Was a guest already. Into the five, or dump it again.'); return; }
+    if (guests().length >= MAX_GUESTS) { block(el, `No more than ${MAX_GUESTS} guests.`); return; }
     it.guest = simNow();
     it.guestUsed = true;
     commit();
@@ -695,7 +695,7 @@
   function doneBtn(it) {
     const b = document.createElement('button');
     b.className = 'donebtn';
-    b.title = 'Erledigt – löschen';
+    b.title = 'Done, delete';
     b.textContent = '✓';
     b.addEventListener('click', e => {
       e.stopPropagation();
@@ -766,7 +766,7 @@
         const texts = arr.filter(t => typeof t === 'string' && t.trim()).map(t => t.trim());
         if (texts.length) {
           addThoughts(texts);
-          setTimeout(() => flash(`${texts.length} Gedanken importiert.`), 300);
+          setTimeout(() => flash(`${texts.length} thoughts imported.`), 300);
         }
       }
     } catch (e) { /* malformed import — ignore */ }

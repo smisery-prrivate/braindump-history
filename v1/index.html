@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Braindump</title>
+<title>Brain Relieve</title>
 <style>
   :root {
     --bg: #faf7f2;
@@ -278,25 +278,25 @@
   <!-- Main: dump + my five -->
   <section id="mainScreen" class="screen active">
     <header>
-      <h1>Braindump</h1>
+      <h1>Brain Relieve</h1>
       <span id="count"></span>
     </header>
     <div class="inputrow">
-      <textarea id="dumpInput" rows="1" placeholder="Was ist im Kopf?"></textarea>
-      <button id="micBtn" class="iconbtn" title="Sprechen">🎤</button>
-      <button id="sendBtn" class="iconbtn" title="Senden">➤</button>
+      <textarea id="dumpInput" rows="1" placeholder="What's on your mind?"></textarea>
+      <button id="micBtn" class="iconbtn" title="Speak">🎤</button>
+      <button id="sendBtn" class="iconbtn" title="Send">➤</button>
     </div>
-    <div id="dumpFlash">Im Archiv. Weg damit.</div>
+    <div id="dumpFlash">Into the archive. Gone.</div>
 
     <div class="fivehead">
-      <h2>Meine Fünf</h2>
+      <h2>My Five</h2>
       <span id="fiveCount"></span>
     </div>
     <div id="fiveList"></div>
-    <div id="fiveEmpty" hidden>Noch nichts priorisiert.<br>Öffne das Archiv, um bis zu fünf Dinge zu wählen.</div>
+    <div id="fiveEmpty" hidden>Nothing prioritized yet.<br>Open the archive to pick up to five things.</div>
 
     <div class="mainfooter">
-      <button id="openArchiveBtn">🔒 Archiv öffnen &amp; ändern</button>
+      <button id="openArchiveBtn">🔒 Open archive &amp; change</button>
       <div class="version">v1</div>
     </div>
   </section>
@@ -304,28 +304,28 @@
   <!-- Lock -->
   <section id="lockScreen" class="screen">
     <div class="lockicon">🔒</div>
-    <p>Das Archiv kostet Aufwand.<br>Das ist Absicht.</p>
+    <p>The archive costs effort.<br>That's the point.</p>
     <input id="pwInput" type="password" inputmode="numeric" autocomplete="off" placeholder="••••">
-    <button class="ghost back" id="lockBackBtn">Zurück</button>
+    <button class="ghost back" id="lockBackBtn">Back</button>
   </section>
 
   <!-- Archive -->
   <section id="archiveScreen" class="screen">
     <header>
-      <h1>Archiv</h1>
+      <h1>Archive</h1>
       <span id="archCount"></span>
     </header>
-    <div id="limitMsg">Fünf sind fünf. Erst eins wegnehmen.</div>
+    <div id="limitMsg">Five is five. Remove one first.</div>
     <div id="archList"></div>
-    <div id="archEmpty" hidden>Leer. Geh dumpen.</div>
+    <div id="archEmpty" hidden>Empty. Go dump.</div>
     <div class="testpanel">
-      <span>Zeitraffer (Test):</span>
-      <button data-days="7">+7 T</button>
-      <button data-days="30">+30 T</button>
+      <span>Time-lapse (test):</span>
+      <button data-days="7">+7 d</button>
+      <button data-days="30">+30 d</button>
       <button data-days="0">Reset</button>
       <span id="lostFlash"></span>
     </div>
-    <button class="bigbtn" id="closeBtn">Schloss zu</button>
+    <button class="bigbtn" id="closeBtn">Lock it</button>
   </section>
 
 </div>
@@ -368,9 +368,9 @@
   function ageLabel(it) {
     const d = Math.floor(age(it) / DAY);
     const left = EXPIRE_DAYS - d;
-    if (it.priority) return d === 0 ? 'heute' : `vor ${d} T`;
-    if (left <= 5) return `läuft in ${Math.max(left, 0)} T ab`;
-    return d === 0 ? 'heute' : `vor ${d} T`;
+    if (it.priority) return d === 0 ? 'today' : `${d} d ago`;
+    if (left <= 5) return `expires in ${Math.max(left, 0)} d`;
+    return d === 0 ? 'today' : `${d} d ago`;
   }
 
   // ---------- screens ----------
@@ -381,7 +381,7 @@
 
   // ---------- main screen ----------
   function renderMain() {
-    $('count').textContent = items.length ? `${items.length} im Archiv` : '';
+    $('count').textContent = items.length ? `${items.length} in archive` : '';
     const five = items.filter(it => it.priority)
       .sort((a, b) => (a.priority === b.priority) ? b.created - a.created : (a.priority === 'dark' ? -1 : 1));
     const list = $('fiveList');
@@ -434,7 +434,7 @@
     micBtn.addEventListener('click', () => {
       if (listening) { rec.stop(); return; }
       rec = new SR();
-      rec.lang = 'de-DE';
+      rec.lang = navigator.language || 'en-US';
       rec.interimResults = true;
       rec.continuous = false;
       baseText = input.value ? input.value.trim() + ' ' : '';
@@ -496,7 +496,7 @@
       list.appendChild(el);
     }
     $('archEmpty').hidden = visible.length > 0;
-    $('archCount').textContent = `${marks()} / ${MAX_MARKS} gewählt`;
+    $('archCount').textContent = `${marks()} / ${MAX_MARKS} picked`;
   }
 
   // single tap: toggle light/off · double tap: essential (dark)
@@ -541,7 +541,7 @@
       testOffset = d === 0 ? 0 : testOffset + d * DAY;
       const after = items.filter(it => !expired(it)).length;
       const lost = before - after;
-      $('lostFlash').textContent = d === 0 ? '' : (lost > 0 ? `${lost} losgelassen` : '');
+      $('lostFlash').textContent = d === 0 ? '' : (lost > 0 ? `${lost} let go` : '');
       renderArchive();
     });
   });
